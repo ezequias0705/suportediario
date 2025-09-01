@@ -6,11 +6,17 @@ workflows:
       flutter: stable
     scripts:
       - name: Get dependencies
-        script: flutter pub get
+        script: |
+          cd meu_app_notificacoes
+          flutter pub get
       - name: Build Debug APK
-        script: flutter build apk --debug
+        script: |
+          cd meu_app_notificacoes
+          flutter build apk --debug
       - name: Build Release APK
-        script: flutter build apk --release
+        script: |
+          cd meu_app_notificacoes
+          flutter build apk --release
     artifacts:
-      - build/app/outputs/flutter-apk/app-debug.apk
-      - build/app/outputs/flutter-apk/app-release.apk
+      - meu_app_notificacoes/build/app/outputs/flutter-apk/app-debug.apk
+      - meu_app_notificacoes/build/app/outputs/flutter-apk/app-release.apk
