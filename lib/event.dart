@@ -1,78 +1,140 @@
-import 'package:flutter/material.dart';
-import 'notification_service.dart'; // precisa importar o serviço de notificações
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
+import 'event.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
-enum NotificationSoundType { audioFile, tts }
+class NotificationService {
+  static final NotificationService _instance = NotificationService._internal();
 
-class Event {
-  final int id;
-  final String title;
-  final DateTime time;
-  final String sound; // asset ou caminho local (se audioFile) ou texto TTS
-  final List<bool> repeatDays; // [Dom, Seg, Ter, Qua, Qui, Sex, Sáb]
-  final NotificationSoundType soundType;
-  final String ttsVoice; // "male" ou "female"
+  factory NotificationService() => _instance;
 
-  Event({
-    required this.id,
-    required this.title,
-    required this.time,
-    required this.sound,
-    required this.repeatDays,
-    required this.soundType,
-    this.ttsVoice = "female",
-  });
+  NotificationService._internal();
 
-  String get soundLabel {
-    switch (soundType) {
-      case NotificationSoundType.tts:
-        return "Voz ($ttsVoice)";
-      default:
-        switch (sound) {
-          case 'som1.mp3':
-            return 'Remédio';
-          case 'som2.mp3':
-            return 'Padrão';
-          default:
-            return 'Personalizado';
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
+  Future<void> init({void Function(String?)? onSelectNotification}) async {
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    final InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
+
+    await flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        if (onSelectNotification != null) {
+          onSelectNotification(response.payload);
         }
+      },
+    );
+
+    tz.initializeTimeZones();
+  }
+
+  Future<void> scheduleNotification(Event event) async {
+    for (int i = 0; i < 7; i++) {
+      if (event.repeatDays[i]) {
+        final scheduledDate = _nextInstanceOfDay(event.time, i);
+
+        if (event.soundType == NotificationSoundType.tts) {
+          await _scheduleTtsNotification(event, scheduledDate, event.id * 10 + i);
+        } else {
+          final androidDetails = event.sound.startsWith('/')
+              ? AndroidNotificationDetails(
+                  'agenda_channel',
+                  'Agenda Notificações',
+                  channelDescription: 'Canal para notificações de agenda',
+                  importance: Importance.max,
+                  priority: Priority.high,
+                  sound: FilePathAndroidNotificationSound(event.sound),
+                )
+              : AndroidNotificationDetails(
+                  'agenda_channel',
+                  'Agenda Notificações',
+                  channelDescription: 'Canal para notificações de agenda',
+                  importance: Importance.max,
+                  priority: Priority.high,
+                  sound: RawResourceAndroidNotificationSound(
+                    event.sound.replaceAll('.mp3', ''),
+                  ),
+                );
+
+          await flutterLocalNotificationsPlugin.zonedSchedule(
+            event.id * 10 + i,
+            event.title,
+            'Está na hora do seu lembrete!',
+            scheduledDate,
+            NotificationDetails(android: androidDetails),
+            androidAllowWhileIdle: true,
+            uiLocalNotificationDateInterpretation:
+                UILocalNotificationDateInterpretation.absoluteTime,
+            matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+          );
+        }
+      }
     }
   }
 
-  String get repeatLabel {
-    if (repeatDays.every((e) => e)) return 'Todos os dias';
-    final dias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-    List<String> diasSelecionados = [];
-    for (int i = 0; i < repeatDays.length; i++) {
-      if (repeatDays[i]) diasSelecionados.add(dias[i]);
+  Future<void> _scheduleTtsNotification(Event event, tz.TZDateTime scheduledDate, int notifId) async {
+    await flutterLocalNotificationsPlugin.zonedSchedule(
+      notifId,
+      event.title,
+      'Clique para ouvir o lembrete',
+      scheduledDate,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'agenda_channel',
+          'Agenda Notificações',
+          channelDescription: 'Canal para notificações de agenda',
+          importance: Importance.max,
+          priority: Priority.high,
+        ),
+      ),
+      androidAllowWhileIdle: true,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+      payload: 'tts|${event.id}',
+    );
+  }
+
+  tz.TZDateTime _nextInstanceOfDay(DateTime time, int dayOfWeek) {
+    final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
+    tz.TZDateTime scheduledDate = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      time.hour,
+      time.minute,
+    );
+    while (scheduledDate.weekday % 7 != (dayOfWeek + 1) % 7 ||
+        scheduledDate.isBefore(now)) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
-    return diasSelecionados.isEmpty ? 'Não repete' : diasSelecionados.join(', ');
-  }
-}
-
-class EventProvider extends ChangeNotifier {
-  final List<Event> _events = [];
-
-  List<Event> get events => List.unmodifiable(_events);
-
-  void addEvent(Event event) {
-    _events.add(event);
-    NotificationService().scheduleNotification(event);
-    notifyListeners();
+    return scheduledDate;
   }
 
-  void updateEvent(Event event) {
-    int idx = _events.indexWhere((e) => e.id == event.id);
-    if (idx != -1) {
-      _events[idx] = event;
-      NotificationService().cancelNotification(event.id);
-      NotificationService().scheduleNotification(event);
-      notifyListeners();
+  Future<void> cancelNotification(int eventId) async {
+    for (int i = 0; i < 7; i++) {
+      await flutterLocalNotificationsPlugin.cancel(eventId * 10 + i);
     }
   }
 
-  void deleteEvent(Event event) {
-    _events.removeWhere((e) => e.id == event.id);
-    NotificationService().cancelNotification(event.id);
-    notifyListeners();
+  Future<void> playTts(Event event) async {
+    final tts = FlutterTts();
+    await tts.setLanguage("pt-BR");
+
+    if (event.ttsVoice == "male") {
+      await tts.setVoice({"name": "pt-br-x-ptz-network", "locale": "pt-BR"});
+    } else {
+      await tts.setVoice({"name": "pt-br-x-ptz-local", "locale": "pt-BR"});
+    }
+
+    String message =
+        "Agora são ${event.time.hour} horas e ${event.time.minute} minutos. ${event.title}.";
+    await tts.speak(message);
   }
 }
