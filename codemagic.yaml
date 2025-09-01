@@ -5,20 +5,29 @@ workflows:
     environment:
       flutter: stable
     scripts:
-      - name: Criar projeto Flutter moderno
+      # 1️⃣ Criar projeto Flutter temporário
+      - name: Criar projeto Android temporário
         script: |
           flutter create -t app temp_project
           cp -r meu_app_notificacoes/lib temp_project/lib
           cp -r meu_app_notificacoes/assets temp_project/assets
           cp meu_app_notificacoes/pubspec.yaml temp_project/pubspec.yaml
           cd temp_project
+
+      # 2️⃣ Instalar dependências
       - name: Get dependencies
         script: flutter pub get
+
+      # 3️⃣ Build APK debug
       - name: Build Debug APK
         script: flutter build apk --debug
+
+      # 4️⃣ Build APK release
       - name: Build Release APK
         script: flutter build apk --release
+
     artifacts:
       - temp_project/build/app/outputs/flutter-apk/app-debug.apk
       - temp_project/build/app/outputs/flutter-apk/app-release.apk
+
 
