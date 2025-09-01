@@ -5,15 +5,20 @@ workflows:
     environment:
       flutter: stable
     scripts:
+      - name: Criar projeto Flutter moderno
+        script: |
+          flutter create -t app temp_project
+          cp -r meu_app_notificacoes/lib temp_project/lib
+          cp -r meu_app_notificacoes/assets temp_project/assets
+          cp meu_app_notificacoes/pubspec.yaml temp_project/pubspec.yaml
+          cd temp_project
       - name: Get dependencies
-        script: |
-          flutter pub get
+        script: flutter pub get
       - name: Build Debug APK
-        script: |
-          flutter build apk --debug
+        script: flutter build apk --debug
       - name: Build Release APK
-        script: |
-          flutter build apk --release
+        script: flutter build apk --release
     artifacts:
-      - build/app/outputs/flutter-apk/app-debug.apk
-      - build/app/outputs/flutter-apk/app-release.apk
+      - temp_project/build/app/outputs/flutter-apk/app-debug.apk
+      - temp_project/build/app/outputs/flutter-apk/app-release.apk
+
