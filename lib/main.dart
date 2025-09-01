@@ -24,24 +24,24 @@ class MyApp extends StatelessWidget {
       title: 'Agenda Notificações',
       theme: ThemeData(
         brightness: Brightness.dark,
-        primaryColor: Color(0xFF0D1F3C),
-        scaffoldBackgroundColor: Color(0xFF162447),
-        colorScheme: ColorScheme.dark(
+        primaryColor: const Color(0xFF0D1F3C),
+        scaffoldBackgroundColor: const Color(0xFF162447),
+        colorScheme: const ColorScheme.dark(
           primary: Color(0xFF0D1F3C),
           secondary: Color(0xFF1F4287),
         ),
-        cardColor: Color(0xFF1F4287),
-        floatingActionButtonTheme: FloatingActionButtonThemeData(
+        cardColor: const Color(0xFF1F4287),
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
           backgroundColor: Color(0xFF1F4287),
         ),
-        inputDecorationTheme: InputDecorationTheme(
+        inputDecorationTheme: const InputDecorationTheme(
           filled: true,
           fillColor: Color(0xFF23395D),
           border: OutlineInputBorder(),
         ),
-        textTheme: TextTheme(
-          headline6: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          bodyText2: TextStyle(color: Colors.white),
+        textTheme: const TextTheme(
+          titleLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          bodyMedium: TextStyle(color: Colors.white),
         ),
       ),
       home: EventListScreen(),
@@ -55,11 +55,11 @@ class EventListScreen extends StatelessWidget {
     final provider = Provider.of<EventProvider>(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('Meus Lembretes'),
-        backgroundColor: Color(0xFF0D1F3C),
+        title: const Text('Meus Lembretes'),
+        backgroundColor: const Color(0xFF0D1F3C),
       ),
       body: provider.events.isEmpty
-          ? Center(
+          ? const Center(
               child: Text('Nenhum lembrete cadastrado.'),
             )
           : ListView.builder(
@@ -94,18 +94,17 @@ class EventListScreen extends StatelessWidget {
                     ],
                   ),
                   child: Card(
-                    margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                     child: ListTile(
                       title: Text(
                         event.title,
-                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                       subtitle: Text(
-                        '
-${DateFormat.Hm().format(event.time)} | ${event.soundLabel} | Repete: ${event.repeatLabel}',
-                        style: TextStyle(color: Colors.white70),
+                        "${DateFormat.Hm().format(event.time)} | ${event.soundLabel} | Repete: ${event.repeatLabel}",
+                        style: const TextStyle(color: Colors.white70),
                       ),
-                      trailing: Icon(Icons.notifications_active, color: Colors.lightBlueAccent),
+                      trailing: const Icon(Icons.notifications_active, color: Colors.lightBlueAccent),
                     ),
                   ),
                 );
@@ -116,7 +115,7 @@ ${DateFormat.Hm().format(event.time)} | ${event.soundLabel} | Repete: ${event.re
           context,
           MaterialPageRoute(builder: (_) => AddEditEventScreen()),
         ),
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -124,7 +123,7 @@ ${DateFormat.Hm().format(event.time)} | ${event.soundLabel} | Repete: ${event.re
 
 class AddEditEventScreen extends StatefulWidget {
   final Event? event;
-  AddEditEventScreen({this.event});
+  const AddEditEventScreen({this.event, Key? key}) : super(key: key);
 
   @override
   State<AddEditEventScreen> createState() => _AddEditEventScreenState();
@@ -171,23 +170,23 @@ class _AddEditEventScreenState extends State<AddEditEventScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.event == null ? 'Novo Lembrete' : 'Editar Lembrete'),
-        backgroundColor: Color(0xFF0D1F3C),
+        backgroundColor: const Color(0xFF0D1F3C),
       ),
       body: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: ListView(
             children: [
               TextFormField(
                 controller: _titleController,
-                decoration: InputDecoration(labelText: 'Título'),
+                decoration: const InputDecoration(labelText: 'Título'),
                 validator: (value) => value == null || value.isEmpty ? 'Informe o título' : null,
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               ListTile(
                 title: Text('Horário: ${_selectedTime?.format(context) ?? ''}'),
-                trailing: Icon(Icons.access_time),
+                trailing: const Icon(Icons.access_time),
                 onTap: () async {
                   final picked = await showTimePicker(
                     context: context,
@@ -198,16 +197,16 @@ class _AddEditEventScreenState extends State<AddEditEventScreen> {
                   }
                 },
               ),
-              SizedBox(height: 16),
-              Text("Tipo de som da notificação", style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              const Text("Tipo de som da notificação", style: TextStyle(fontWeight: FontWeight.bold)),
               RadioListTile(
-                title: Text("Áudio personalizado"),
+                title: const Text("Áudio personalizado"),
                 value: NotificationSoundType.audioFile,
                 groupValue: _soundType,
                 onChanged: (val) => setState(() => _soundType = val!),
               ),
               RadioListTile(
-                title: Text("Voz sintética (fala horário e nome)"),
+                title: const Text("Voz sintética (fala horário e nome)"),
                 value: NotificationSoundType.tts,
                 groupValue: _soundType,
                 onChanged: (val) => setState(() => _soundType = val!),
@@ -215,7 +214,7 @@ class _AddEditEventScreenState extends State<AddEditEventScreen> {
               if (_soundType == NotificationSoundType.audioFile) ...[
                 DropdownButtonFormField<String>(
                   value: _selectedSound.isEmpty ? null : _selectedSound,
-                  items: [
+                  items: const [
                     DropdownMenuItem(
                       value: 'som1.mp3',
                       child: Text('Som de Remédio'),
@@ -225,7 +224,7 @@ class _AddEditEventScreenState extends State<AddEditEventScreen> {
                       child: Text('Som Padrão'),
                     ),
                   ],
-                  decoration: InputDecoration(labelText: 'Som padrão'),
+                  decoration: const InputDecoration(labelText: 'Som padrão'),
                   onChanged: (val) {
                     setState(() {
                       _selectedSound = val ?? 'som1.mp3';
@@ -233,9 +232,9 @@ class _AddEditEventScreenState extends State<AddEditEventScreen> {
                     });
                   },
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 ElevatedButton.icon(
-                  icon: Icon(Icons.folder),
+                  icon: const Icon(Icons.folder),
                   label: Text(_pickedAudioPath == null
                       ? "Selecionar arquivo de áudio"
                       : "Áudio selecionado"),
@@ -256,15 +255,15 @@ class _AddEditEventScreenState extends State<AddEditEventScreen> {
               if (_soundType == NotificationSoundType.tts)
                 DropdownButtonFormField<String>(
                   value: _ttsVoice,
-                  items: [
+                  items: const [
                     DropdownMenuItem(value: "female", child: Text("Voz feminina")),
                     DropdownMenuItem(value: "male", child: Text("Voz masculina")),
                   ],
                   onChanged: (val) => setState(() => _ttsVoice = val ?? "female"),
-                  decoration: InputDecoration(labelText: "Tipo de voz"),
+                  decoration: const InputDecoration(labelText: "Tipo de voz"),
                 ),
-              SizedBox(height: 16),
-              Text('Repetir em:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              const Text('Repetir em:', style: TextStyle(fontWeight: FontWeight.bold)),
               Wrap(
                 spacing: 8,
                 children: List.generate(7, (index) {
@@ -278,7 +277,7 @@ class _AddEditEventScreenState extends State<AddEditEventScreen> {
                   );
                 }),
               ),
-              SizedBox(height: 32),
+              const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate() && _selectedTime != null) {
