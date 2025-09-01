@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'notification_service.dart'; // precisa importar o serviço de notificações
 
 enum NotificationSoundType { audioFile, tts }
 
@@ -24,7 +25,7 @@ class Event {
   String get soundLabel {
     switch (soundType) {
       case NotificationSoundType.tts:
-        return "Voz (");
+        return "Voz ($ttsVoice)";
       default:
         switch (sound) {
           case 'som1.mp3':
@@ -49,9 +50,9 @@ class Event {
 }
 
 class EventProvider extends ChangeNotifier {
-  List<Event> _events = [];
+  final List<Event> _events = [];
 
-  List<Event> get events => _events;
+  List<Event> get events => List.unmodifiable(_events);
 
   void addEvent(Event event) {
     _events.add(event);
