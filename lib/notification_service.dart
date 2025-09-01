@@ -6,9 +6,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
-
   factory NotificationService() => _instance;
-
   NotificationService._internal();
 
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -17,10 +15,21 @@ class NotificationService {
   Future<void> init() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
+
     final InitializationSettings initializationSettings =
         InitializationSettings(android: initializationSettingsAndroid);
 
-    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+    await flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (response) async {
+        if (response.payload != null && response.payload!.startsWith("tts|")) {
+          final id = int.parse(response.payload!.split("|")[1]);
+          // Aqui você precisa resgatar o evento pelo id (ex: do Provider ou banco)
+          // e chamar playTts(event)
+        }
+      },
+    );
+
     tz.initializeTimeZones();
   }
 
@@ -30,13 +39,13 @@ class NotificationService {
         final scheduledDate = _nextInstanceOfDay(event.time, i);
 
         if (event.soundType == NotificationSoundType.tts) {
-          // TTS: faz a voz falar o nome e horário do lembrete
           await _scheduleTtsNotification(event, scheduledDate, event.id * 10 + i);
         } else {
           final androidDetails = event.sound.startsWith('/')
               ? AndroidNotificationDetails(
                   'agenda_channel',
                   'Agenda Notificações',
+                  channelDescription: 'Notificações de lembretes',
                   importance: Importance.max,
                   priority: Priority.high,
                   sound: FilePathAndroidNotificationSound(event.sound),
@@ -44,12 +53,14 @@ class NotificationService {
               : AndroidNotificationDetails(
                   'agenda_channel',
                   'Agenda Notificações',
+                  channelDescription: 'Notificações de lembretes',
                   importance: Importance.max,
                   priority: Priority.high,
                   sound: RawResourceAndroidNotificationSound(
                     event.sound.replaceAll('.mp3', ''),
                   ),
                 );
+
           await flutterLocalNotificationsPlugin.zonedSchedule(
             event.id * 10 + i,
             event.title,
@@ -66,18 +77,18 @@ class NotificationService {
     }
   }
 
-  Future<void> _scheduleTtsNotification(Event event, tz.TZDateTime scheduledDate, int notifId) async {
-    // Apenas dispara a notificação padrão, e executa TTS ao abrir o app.
-    // (Notificações Android não tocam áudio TTS automaticamente sem workaround de foreground service)
+  Future<void> _scheduleTtsNotification(
+      Event event, tz.TZDateTime scheduledDate, int notifId) async {
     await flutterLocalNotificationsPlugin.zonedSchedule(
       notifId,
       event.title,
       'Clique para ouvir o lembrete',
       scheduledDate,
-      NotificationDetails(
+      const NotificationDetails(
         android: AndroidNotificationDetails(
           'agenda_channel',
           'Agenda Notificações',
+          channelDescription: 'Notificações de lembretes',
           importance: Importance.max,
           priority: Priority.high,
         ),
@@ -91,8 +102,8 @@ class NotificationService {
   }
 
   tz.TZDateTime _nextInstanceOfDay(DateTime time, int dayOfWeek) {
-    final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
-    tz.TZDateTime scheduledDate = tz.TZDateTime(
+    final now = tz.TZDateTime.now(tz.local);
+    var scheduledDate = tz.TZDateTime(
       tz.local,
       now.year,
       now.month,
@@ -100,10 +111,12 @@ class NotificationService {
       time.hour,
       time.minute,
     );
-    while (scheduledDate.weekday % 7 != (dayOfWeek + 1) % 7 ||
+
+    while (scheduledDate.weekday != (dayOfWeek + 1) % 7 &&
         scheduledDate.isBefore(now)) {
-      scheduledDate = scheduledDate.add(Duration(days: 1));
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
+
     return scheduledDate;
   }
 
@@ -113,16 +126,21 @@ class NotificationService {
     }
   }
 
-  // Para ser chamado ao abrir o app via notificação, usando payload
   Future<void> playTts(Event event) async {
     final tts = FlutterTts();
     await tts.setLanguage("pt-BR");
-    if (event.ttsVoice == "male") {
-      await tts.setVoice({"name": "pt-br-x-ptz-network", "locale": "pt-BR"});
-    } else {
-      await tts.setVoice({"name": "pt-br-x-ptz-local", "locale": "pt-BR"});
+
+    try {
+      if (event.ttsVoice == "male") {
+        await tts.setVoice({"name": "pt-br-x-ptz-network", "locale": "pt-BR"});
+      } else {
+        await tts.setVoice({"name": "pt-br-x-ptz-local", "locale": "pt-BR"});
+      }
+    } catch (_) {
+      await tts.setVoice({"locale": "pt-BR"});
     }
-    String message =
+
+    final message =
         "Agora são ${event.time.hour} horas e ${event.time.minute} minutos. ${event.title}.";
     await tts.speak(message);
   }
