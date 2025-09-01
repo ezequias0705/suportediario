@@ -1,11 +1,9 @@
 name: suportediario
 description: Aplicativo para notificar agenda
 
-# Restrições de SDK Dart
 environment:
   sdk: ">=3.9.0 <4.0.0"
 
-# Dependências do Flutter
 dependencies:
   flutter:
     sdk: flutter
@@ -13,23 +11,14 @@ dependencies:
   file_picker: ^8.0.0
   cupertino_icons: ^1.0.5
 
-# Dependências de desenvolvimento (opcional)
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^2.0.1
 
-# Configurações do Flutter
 flutter:
   uses-material-design: true
-
   assets:
     - assets/audio/som1.mp3
     - assets/audio/som2.mp3
 
-# Plugin apenas para Android
-plugin:
-  platforms:
-    android:
-      package: com.seuprojeto.suportediario
-      pluginClass: SuporteDiarioPlugin
