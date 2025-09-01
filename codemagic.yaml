@@ -2,7 +2,6 @@ workflows:
   flutter-android:
     name: Flutter Android Build
     max_build_duration: 60
-    project_path: meu_app_notificacoes
     environment:
       flutter: stable
     scripts:
