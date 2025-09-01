@@ -5,30 +5,31 @@ workflows:
     environment:
       flutter: stable
     scripts:
-      # 1️⃣ Criar projeto Flutter moderno temporário
-      - name: Criar projeto Flutter moderno
+      # 1️⃣ Criar projeto Flutter temporário com Android v2 embedding
+      - name: Criar projeto Flutter temporário
         script: |
           flutter create -t app temp_project
           cp -r lib temp_project/lib
           cp -r assets temp_project/assets
           cp pubspec.yaml temp_project/pubspec.yaml
-          cd temp_project
+          cd temp_project   # MUITO IMPORTANTE: entrar no temp_project antes de qualquer comando Flutter
 
-      # 2️⃣ Instalar dependências
+      # 2️⃣ Instalar dependências dentro do temp_project
       - name: Get dependencies
         script: flutter pub get
 
-      # 3️⃣ Build APK debug
+      # 3️⃣ Build APK debug dentro do temp_project
       - name: Build Debug APK
         script: flutter build apk --debug
 
-      # 4️⃣ Build APK release
+      # 4️⃣ Build APK release dentro do temp_project
       - name: Build Release APK
         script: flutter build apk --release
 
     artifacts:
       - temp_project/build/app/outputs/flutter-apk/app-debug.apk
       - temp_project/build/app/outputs/flutter-apk/app-release.apk
+
 
 
 
